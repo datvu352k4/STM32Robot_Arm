@@ -5,13 +5,12 @@
 #define DIR_PIN1L PB13
 #define STEP_PIN1R PB14
 #define DIR_PIN1R PB15
-#define STEP_PIN2 PA8
-#define DIR_PIN2 PA9
-#define STEP_PIN3 PA10
-#define DIR_PIN3 PA11
-#define STEP_PIN4 PA12
-#define DIR_PIN4 PA15
-HardwareSerial Serial2(PA3, PA2); // RX, TX
+#define STEP_PIN2 PA11
+#define DIR_PIN2 PA12
+#define STEP_PIN3 PA15
+#define DIR_PIN3 PB3
+#define STEP_PIN4 PB4
+#define DIR_PIN4 PB5
 
 AccelStepper stepper1L(AccelStepper::DRIVER, STEP_PIN1L, DIR_PIN1L);
 AccelStepper stepper1R(AccelStepper::DRIVER, STEP_PIN1R, DIR_PIN1R);
@@ -30,11 +29,12 @@ long  step1 = a1 * 4380.0 / 180.0 ,
       step3 = a3 * 3000.0 / 180.0 ;
 
 void setup() {
-  Serial2.begin(115200);
+  Serial.begin(115200);
   pinMode(PB9, INPUT);
   pinMode(PB8, INPUT);
   pinMode(PB7, INPUT);
   pinMode(PB6, INPUT);
+  pinMode(PC13,OUTPUT);
 
   stepper1L.setMaxSpeed(800);
   stepper1L.setAcceleration(500);
@@ -52,7 +52,26 @@ void setup() {
   stepper4.setAcceleration(300);
 
 }
-
+void check(){
+  if (digitalRead(PB8) == 1) {
+      stepper2.stop(); 
+      stepper2.setCurrentPosition(1650*2); 
+  }
+  if (digitalRead(PB7) == 1) {
+      stepper3.stop(); 
+      stepper3.setCurrentPosition(1500*2); 
+  }
+  if (digitalRead(PB9) == 1) {
+      stepper1L.stop(); 
+      stepper1R.stop();
+      stepper1L.setCurrentPosition(0); 
+      stepper1R.setCurrentPosition(0);
+  }
+  if (digitalRead(PB6) == 1) {
+        stepper4.stop(); 
+        stepper4.setCurrentPosition(0);
+  }
+}
 void home(){
   if(!homed3){
     stepper3.moveTo(10000); 
@@ -118,7 +137,7 @@ void home(){
       if (digitalRead(PB6) == 1) {
         stepper4.stop(); 
         stepper4.setCurrentPosition(0);
-        stepper4.moveTo(-100); 
+        stepper4.moveTo(-200); 
         stepper4.run();
 
         homed4 = true;
@@ -129,7 +148,7 @@ void home(){
   }
   else {
     if (waitingAfterHome) {
-      if (millis() - homeTime >= 1000) { // đợi 2 giây
+      if (millis() - homeTime >= 2000) { // đợi 2 giây
         waitingAfterHome = false;
         
         stepper1L.setMaxSpeed(2000);
@@ -168,8 +187,8 @@ void home(){
 }
 
 void readSerialInput() {
-  if (Serial2.available()) {
-    String input = Serial2.readStringUntil('\n');
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
       a1 = input.substring(0, input.indexOf(',')).toInt();
       a2 = input.substring(input.indexOf(',')+1, input.lastIndexOf(',')).toInt();
       a3 = input.substring(input.lastIndexOf(',')+1).toInt();
@@ -186,9 +205,10 @@ void moveRobot(long step1, long step2, long step3){
   stepper2.run();
   stepper3.run();
 }
-
-/*void loop(){
-  Serial2.println(digitalRead(PB8));
+/*
+void loop(){
+  if (digitalRead(PB8)==1)digitalWrite(PC13,1);
+  else digitalWrite(PC13,0);
 }*/
 
 void loop() {
